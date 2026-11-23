@@ -1,0 +1,6 @@
+# OpenML cache created by run_experiments_v2.py
+data_v2/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store
