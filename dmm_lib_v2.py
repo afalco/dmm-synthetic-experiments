@@ -1,5 +1,5 @@
 """
-dmm_lib_v2.py -- reproducible code for the numerical section of
+dmm_lib_v2.py (v2.0.1) -- reproducible code for the numerical section of
 "Density-Matrix Spectral Embeddings for Categorical Data" (v2).
 
 Contents
@@ -130,23 +130,35 @@ def scott_bandwidth(Z):
     return float(np.mean(Z.std(0)) * n ** (-1.0 / (r + 4)) + 1e-12)
 
 class LatentKDE:
-    """Class-conditional Gaussian KDE + MAP (use_priors=True) or ML rule."""
+    """Class-conditional Gaussian KDE + MAP (use_priors=True) or ML rule (use_priors=False).
+
+    Empty-class convention (Definition of the KDE and Algorithm 1 of the manuscript): if a class has no
+    training observation (n_y = 0), its density estimate is identically zero, so its log-score is -inf under
+    both the MAP and the ML rule and it is never predicted. Ties are broken by the smallest class index.
+    """
     def __init__(self, bandwidth=None, use_priors=True):
         self.h, self.use_priors = bandwidth, use_priors
     def fit(self, Z, y, k):
+        Z = np.asarray(Z); y = np.asarray(y)
+        if Z.shape[0] == 0:
+            raise ValueError("LatentKDE.fit requires at least one training observation")
         self.k = k
         self.h_ = self.h if self.h is not None else scott_bandwidth(Z)
-        self.kdes, self.logpri = [], np.zeros(k)
-        for c in range(k):
-            Zc = Z[y == c]
-            self.logpri[c] = np.log(max(len(Zc), 1) / len(Z))
-            self.kdes.append(KernelDensity(bandwidth=self.h_).fit(Zc if len(Zc) else Z[:1]))
+        self.n_y = np.array([np.sum(y == c) for c in range(k)])
+        self.kdes = [KernelDensity(bandwidth=self.h_).fit(Z[y == c]) if self.n_y[c] > 0 else None for c in range(k)]
+        with np.errstate(divide="ignore"):
+            self.logpri = np.log(self.n_y / len(Z))          # -inf for empty classes
         return self
+    def scores(self, Z):
+        """(n, k) matrix of log-scores; -inf for empty classes."""
+        Z = np.asarray(Z)
+        S = np.full((Z.shape[0], self.k), -np.inf)
+        for c, kd in enumerate(self.kdes):
+            if kd is not None:
+                S[:, c] = kd.score_samples(Z) + (self.logpri[c] if self.use_priors else 0.0)
+        return S
     def predict(self, Z):
-        S = np.column_stack([kd.score_samples(Z) for kd in self.kdes])
-        if self.use_priors:
-            S = S + self.logpri
-        return S.argmax(1)
+        return self.scores(Z).argmax(1)
 
 # ----------------------------------------------------------------------------- embeddings
 class DMMEmbed:
@@ -179,11 +191,13 @@ class DCAEmbed:
     """Discriminant correspondence analysis: CA of the class x modality table; individuals as barycentres."""
     def __init__(self, r): self.r = r
     def fit(self, X, y, k, q):
-        self.q = q; F = count_matrix(X, y, k).T; P = F / F.sum(); rr = P.sum(1); c = P.sum(0)
+        self.q = q; F = count_matrix(X, y, k).T
+        F = F[F.sum(1) > 0]                                   # empty classes carry no mass: drop their rows
+        P = F / F.sum(); rr = P.sum(1); c = P.sum(0)
         keep = c > 0; self.keep = keep; c = c[keep]; P = P[:, keep]
         S = (P - np.outer(rr, c)) / np.sqrt(np.outer(rr, c))
         _, _, Vt = np.linalg.svd(S, full_matrices=False)
-        rd = min(self.r, k - 1); self.G = Vt[:rd].T / np.sqrt(c)[:, None]
+        rd = max(1, min(self.r, F.shape[0] - 1)); self.G = Vt[:rd].T / np.sqrt(c)[:, None]
         return self
     def transform(self, X): return (X[:, self.keep] / self.q) @ self.G
 

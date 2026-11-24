@@ -17,6 +17,8 @@ and the scripts that regenerate every number, table and figure of the numerical 
 | `results_v2/` | Raw results (CSV) reported in the manuscript. |
 | `figures_v2/` | Figures of the manuscript (PDF). |
 | `dmm_synthetic_experiments.ipynb` | Original exploratory notebook (archived in release v1.0.0). |
+| `test_empty_class.py` | Check of the empty-class convention of the classifier (`python test_empty_class.py`). |
+| `CHANGELOG.md` | Version history. |
 | `environment.yml` | Conda environment. |
 
 ## Experiments
@@ -60,3 +62,4 @@ clf = L.LatentKDE(use_priors=True).fit(emb.transform(X), y, k=3)
 
 * **v1.0.0** – original notebook with the first synthetic experiments.
 * **v2.0.0** – library, experiment and figure scripts, and results for the current version of the manuscript.
+* **v2.0.1** – implements the empty-class convention of the classifier (Algorithm 1); reported results unchanged. See `CHANGELOG.md`.
