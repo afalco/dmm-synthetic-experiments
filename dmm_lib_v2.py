@@ -1,5 +1,5 @@
 """
-dmm_lib_v2.py (v2.0.1) -- reproducible code for the numerical section of
+dmm_lib_v2.py (v2.1.0) -- reproducible code for the numerical section of
 "Density-Matrix Spectral Embeddings for Categorical Data" (v2).
 
 Contents
@@ -106,16 +106,25 @@ def dmm_operator(X, y, k, normalized=False):
     A = np.sqrt(F)
     return A @ A.T / np.trace(A.T @ A), A
 
-def dmm_basis(X, y, k, r, normalized=False):
-    """Top-r eigenvectors of rho_D (or rho_CN) via the k x k Gram matrix."""
+def dmm_basis(X, y, k, r, normalized=False, rtol=1e-10):
+    """Top eigenvectors of rho_D (or rho_CN) via the k x k Gram matrix (Corollary 7.2).
+
+    Spectral coordinates are only defined for r <= r_star = rank(rho_D) (Section 4), so the number of returned
+    columns is min(r, numerical rank), where eigenvalues <= rtol * lambda_max are treated as zero. This matters
+    only for degenerate inputs (e.g. empty classes with r = k, or exactly collinear class profiles).
+    """
     F = count_matrix(X, y, k)
     if normalized:
         s = F.sum(0); s[s == 0] = 1.0; F = F / s
     A = np.sqrt(F)
     lam, V = np.linalg.eigh(A.T @ A)
-    o = np.argsort(lam)[::-1][:r]
-    lam, V = np.maximum(lam[o], 1e-12), V[:, o]
-    return (A @ V) / np.sqrt(lam)
+    o = np.argsort(lam)[::-1]
+    lam, V = lam[o], V[:, o]
+    rank = int(np.sum(lam > rtol * max(lam[0], 0.0))) if lam[0] > 0 else 0
+    if rank == 0:
+        raise ValueError("dmm_basis: the count matrix is zero")
+    r_eff = min(r, rank)
+    return (A @ V[:, :r_eff]) / np.sqrt(lam[:r_eff])
 
 def top_eigvecs(M, r):
     w, V = np.linalg.eigh(M)

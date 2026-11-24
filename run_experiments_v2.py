@@ -1,15 +1,21 @@
 """
-run_experiments_v2.py -- regenerates every result of Section 8 (v2) into ./results_v2.
-Usage:  python run_experiments_v2.py   (requires numpy, scipy, pandas, scikit-learn; network for OpenML)
-Seeds and configurations are exactly those reported in the paper.
+run_experiments_v2.py -- regenerates every result of the numerical section of the manuscript.
+
+Usage:
+    python run_experiments_v2.py                      # all blocks, output in ./results_rerun
+    python run_experiments_v2.py --blocks A B         # selected blocks
+    python run_experiments_v2.py --out results_v2     # overwrite the archived results (explicit opt-in)
+
+Seeds and configurations are exactly those reported in the manuscript. With the pinned environment
+(environment.yml) the archived CSV files in ./results_v2 are reproduced exactly. Block C needs internet
+access (OpenML); downloads are cached in ./data_v2.
 """
-import os, time, itertools, numpy as np, pandas as pd, scipy.sparse as sp, warnings
+import os, time, argparse, itertools, numpy as np, pandas as pd, scipy.sparse as sp, warnings
 from sklearn.model_selection import train_test_split
 from sklearn.datasets import fetch_openml
 import dmm_lib_v2 as L
 warnings.filterwarnings("ignore")
-HERE=os.path.dirname(os.path.abspath(__file__)); RES=os.path.join(HERE,"results_v2"); DATA=os.path.join(HERE,"data_v2")
-os.makedirs(RES,exist_ok=True); os.makedirs(DATA,exist_ok=True)
+HERE=os.path.dirname(os.path.abspath(__file__)); RES=os.path.join(HERE,"results_rerun"); DATA=os.path.join(HERE,"data_v2")
 
 # ---------------- Block A: stability / minimax validation (exact multinomial simulation of F)
 def sample_counts(M,n,rng):
@@ -35,7 +41,13 @@ def block_A():
     A3=[]
     for alpha in [1.0,0.3,0.1,0.03,0.01]:
         M=L.dirichlet_model([20]*10,4,alpha,seed=3); row=one_cell(M,4000,50,3,rng); P=M.profiles()
-        A3.append({**row,"alpha":alpha,"p_min":P.min(),"frac_cells_below_1e-3":np.mean(P<1e-3)})
+        # bound obtained from Hoeffding + union bound + Lipschitz continuity of sqrt on [p_min,1] (Section 8.2)
+        pmin=P.min(); kk=M.k; dd=M.d; nmin=4000/kk; dl=0.05
+        cond=bool(np.sqrt(np.log(4*dd*kk/dl)/(2*nmin))<=pmin/2)
+        eps=np.sqrt(kk*dd*np.log(4*dd*kk/dl)/(4*max(pmin,1e-300)*nmin))
+        lip=(2*np.linalg.norm(np.sqrt(P),2)*eps+eps**2)/kk
+        A3.append({**row,"alpha":alpha,"p_min":pmin,"frac_cells_below_1e-3":np.mean(P<1e-3),
+                   "lipschitz_condition_holds":cond,"lipschitz_bound":lip})
     pd.DataFrame(A3).to_csv(f"{RES}/A3_rare.csv",index=False)
     A4=[one_cell(L.dirichlet_model([10]*10,2,0.5,priors=[1-p,p],seed=4),4000,100,2,rng) for p in [0.5,0.3,0.2,0.1,0.05,0.02,0.01]]
     pd.DataFrame(A4).to_csv(f"{RES}/A4_imbalance.csv",index=False)
@@ -140,4 +152,14 @@ def block_C():
     pd.DataFrame(AMZ).to_csv(f"{RES}/real_amazon.csv",index=False)
 
 if __name__=="__main__":
-    block_A(); block_B(); block_C()
+    ap=argparse.ArgumentParser(description=__doc__,formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--out",default="results_rerun",help="output folder (relative to this script); default: results_rerun")
+    ap.add_argument("--blocks",nargs="+",default=["A","B","C"],choices=["A","B","C"])
+    args=ap.parse_args()
+    RES=os.path.join(HERE,args.out); os.makedirs(RES,exist_ok=True); os.makedirs(DATA,exist_ok=True)
+    if os.path.abspath(RES)==os.path.join(HERE,"results_v2"):
+        print("warning: overwriting the archived results in results_v2/")
+    t0=time.time()
+    for b in args.blocks:
+        {"A":block_A,"B":block_B,"C":block_C}[b](); print(f"block {b} done ({time.time()-t0:.0f} s)",flush=True)
+    print("results written to",RES)

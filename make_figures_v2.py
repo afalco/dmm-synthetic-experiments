@@ -1,12 +1,13 @@
 """
 make_figures_v2.py -- draws the two figures of Section 8 from the CSV files in ./results_v2
-(run run_experiments_v2.py first). Output: ./figures_v2/*.pdf
+(default) or from --results <folder>. Output: ./figures_v2/*.pdf (or --out <folder>)
 """
 import os, numpy as np, pandas as pd, matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FixedLocator, NullLocator, NullFormatter, FuncFormatter
-HERE=os.path.dirname(os.path.abspath(__file__)); RES=os.path.join(HERE,"results_v2"); FIG=os.path.join(HERE,"figures_v2"); os.makedirs(FIG,exist_ok=True)
+import argparse
+HERE=os.path.dirname(os.path.abspath(__file__)); RES=os.path.join(HERE,"results_v2"); FIG=os.path.join(HERE,"figures_v2")
 plt.rcParams.update({"font.size":8,"axes.titlesize":8,"axes.labelsize":8,"xtick.labelsize":6,"ytick.labelsize":6,"legend.fontsize":6,
                      "axes.spines.top":False,"axes.spines.right":False,"axes.titlelocation":"left"})
 def letter(ax,s): ax.text(-0.18,1.06,s,transform=ax.transAxes,fontsize=10,fontweight="bold",va="bottom")
@@ -61,4 +62,6 @@ def fig_classifier():
     fig.savefig(f"{FIG}/fig_classifier_regimes.pdf",bbox_inches="tight",pad_inches=0.03); plt.close(fig)
 
 if __name__=="__main__":
+    ap=argparse.ArgumentParser(); ap.add_argument("--results",default="results_v2"); ap.add_argument("--out",default="figures_v2")
+    a=ap.parse_args(); RES=os.path.join(HERE,a.results); FIG=os.path.join(HERE,a.out); os.makedirs(FIG,exist_ok=True)
     fig_theory(); fig_classifier(); print("figures written to", FIG)

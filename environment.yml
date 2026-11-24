@@ -2,17 +2,13 @@ name: dmm-synthetic
 channels:
   - conda-forge
 dependencies:
-  - python=3.11
-  - numpy>=1.26
-  - scipy>=1.11
-  - pandas>=2.1
-  - scikit-learn>=1.4
-  - matplotlib>=3.8
-  - seaborn>=0.13
-  - jupyterlab>=4.0
-  - ipykernel>=6.29
-  - tqdm>=4.66
-  - joblib>=1.3
-  - pip
-  - pip:
-      - rich>=13.7
+  # versions used to produce the archived results in results_v2/ (exact reproduction)
+  - python=3.12
+  - numpy=2.5.3
+  - scipy=1.18.1
+  - pandas=3.1.1
+  - scikit-learn=1.9.1
+  - matplotlib=3.11.1
+  # optional, only to open the archived v1 notebook
+  - jupyterlab
+  - ipykernel

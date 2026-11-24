@@ -12,14 +12,15 @@ and the scripts that regenerate every number, table and figure of the numerical 
 | File / folder | Description |
 |---|---|
 | `dmm_lib_v2.py` | Methods: blockwise categorical generator; count-based and class-normalized DMM operators (Gram route); latent Gaussian KDE classifier (MAP / ML rule, Scott bandwidth); baselines (Hellinger PCA+KDE, MCA+KDE, DCA+KDE, PCA+kNN, shrinkage LDA, categorical naive Bayes, logistic regression, random forest). |
-| `run_experiments_v2.py` | Runs all experiments with the seeds used in the manuscript and writes CSV files to `results_v2/`. |
+| `run_experiments_v2.py` | Runs all experiments with the seeds used in the manuscript and writes CSV files to `results_rerun/` (or `--out`); with the pinned environment it reproduces `results_v2/` exactly. |
 | `make_figures_v2.py` | Draws the figures of the numerical section from `results_v2/` into `figures_v2/`. |
 | `results_v2/` | Raw results (CSV) reported in the manuscript. |
 | `figures_v2/` | Figures of the manuscript (PDF). |
 | `dmm_synthetic_experiments.ipynb` | Original exploratory notebook (archived in release v1.0.0). |
 | `test_empty_class.py` | Check of the empty-class convention of the classifier (`python test_empty_class.py`). |
 | `CHANGELOG.md` | Version history. |
-| `environment.yml` | Conda environment. |
+| `environment.yml` | Conda environment with the exact versions used for the archived results. |
+| `LICENSE` | MIT licence. |
 
 ## Experiments
 
@@ -44,8 +45,9 @@ or, for Block A, the operator / subspace errors together with the theoretical bo
 ```bash
 conda env create -f environment.yml
 conda activate dmm-synthetic
-python run_experiments_v2.py     # about 15-20 minutes on a laptop; Block C needs internet access
-python make_figures_v2.py
+python run_experiments_v2.py                          # about 15 minutes; writes to results_rerun/ (Block C needs internet)
+python make_figures_v2.py --results results_rerun --out figures_rerun
+python test_empty_class.py
 ```
 
 The methods can also be used directly:
@@ -62,4 +64,8 @@ clf = L.LatentKDE(use_priors=True).fit(emb.transform(X), y, k=3)
 
 * **v1.0.0** – original notebook with the first synthetic experiments.
 * **v2.0.0** – library, experiment and figure scripts, and results for the current version of the manuscript.
-* **v2.0.1** – implements the empty-class convention of the classifier (Algorithm 1); reported results unchanged. See `CHANGELOG.md`.
+* **v2.1.0** – empty-class and rank conventions of Algorithm 1, safer experiment driver, pinned environment, MIT licence; reported results unchanged. See `CHANGELOG.md`.
+
+## Licence
+
+MIT (see `LICENSE`).

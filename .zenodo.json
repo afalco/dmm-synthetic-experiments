@@ -1,0 +1,29 @@
+{
+  "title": "DMM experiments: density-matrix spectral embeddings for categorical data",
+  "upload_type": "software",
+  "description": "Reproducibility material for the manuscript \"Density-Matrix Spectral Embeddings for Categorical Data: Operator Structure and Stability\": a Python implementation of the Density-Matrix Method (DMM) and of the baselines, scripts that regenerate every numerical result, table and figure of the manuscript, and the raw results (CSV).",
+  "creators": [
+    {
+      "name": "Bosch-Romeu, Raquel",
+      "affiliation": "Universidad Cardenal Herrera-CEU, CEU Universities"
+    },
+    {
+      "name": "Falcó, Antonio",
+      "affiliation": "Universidad Cardenal Herrera-CEU, CEU Universities"
+    },
+    {
+      "name": "Rodríguez-Gallego, José-Antonio",
+      "affiliation": "Universidad de Sevilla"
+    }
+  ],
+  "license": "MIT",
+  "keywords": [
+    "density matrix",
+    "categorical data",
+    "spectral embedding",
+    "Hellinger distance",
+    "kernel density estimation",
+    "minimax"
+  ],
+  "access_right": "open"
+}
